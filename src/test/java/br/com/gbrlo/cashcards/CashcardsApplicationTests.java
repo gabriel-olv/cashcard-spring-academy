@@ -1,13 +1,13 @@
 package br.com.gbrlo.cashcards;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class CashcardsApplicationTests {
@@ -32,5 +32,25 @@ class CashcardsApplicationTests {
 		var response = rest.getForEntity("/cashcards/1000", String.class);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 		assertThat(response.getBody()).isBlank();
+	}
+
+	@Test
+	void shouldCreateANewCashCard() {
+		var newCashCard = new CashCard(null, 250.0);
+		var createResponse = rest.postForEntity("/cashcards", newCashCard, Void.class);
+
+		assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+		var locationOfNewCashCard = createResponse.getHeaders().getLocation();
+		var getResponse = rest.getForEntity(locationOfNewCashCard, String.class);
+
+		assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		var documentContext = JsonPath.parse(getResponse.getBody());
+		var id = documentContext.read("$.id");
+		var amount = documentContext.read("$.amount");
+
+		assertThat(id).isNotNull();
+		assertThat(amount).isEqualTo(250.0);
 	}
 }
