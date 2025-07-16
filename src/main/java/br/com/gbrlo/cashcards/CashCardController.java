@@ -23,6 +23,11 @@ public class CashCardController {
         return ResponseEntity.created(locationOfNewCashCard).build();
     }
 
+    @GetMapping
+    private ResponseEntity<Iterable<CashCard>> findAll() {
+        return ResponseEntity.ok(cashCardRepository.findAll());
+    }
+
     @GetMapping("/{requestedId}")
     private ResponseEntity<CashCard> findById(@PathVariable Long requestedId) {
         var cashCardOptional = cashCardRepository.findById(requestedId);

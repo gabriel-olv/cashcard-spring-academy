@@ -1,11 +1,13 @@
 package br.com.gbrlo.cashcards;
 
 import com.jayway.jsonpath.JsonPath;
+import net.minidev.json.JSONArray;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,6 +37,7 @@ class CashcardsApplicationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	void shouldCreateANewCashCard() {
 		var newCashCard = new CashCard(null, 250.0);
 		var createResponse = rest.postForEntity("/cashcards", newCashCard, Void.class);
@@ -52,5 +55,20 @@ class CashcardsApplicationTests {
 
 		assertThat(id).isNotNull();
 		assertThat(amount).isEqualTo(250.0);
+	}
+
+	@Test
+	void shouldReturnAllCashCardsWhenListIsRequested() {
+		var response = rest.getForEntity("/cashcards", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		var documentContext = JsonPath.parse(response.getBody());
+		var cashCardCount = documentContext.read("$.length()");
+		assertThat(cashCardCount).isEqualTo(3);
+
+		JSONArray ids = documentContext.read("$..id");
+		JSONArray amount = documentContext.read("$..amount");
+		assertThat(ids).containsExactlyInAnyOrder(99, 100, 101);
+		assertThat(amount).containsExactlyInAnyOrder(123.45, 1.0, 150.0);
 	}
 }
