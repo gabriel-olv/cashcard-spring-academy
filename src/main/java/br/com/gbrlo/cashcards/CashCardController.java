@@ -52,4 +52,16 @@ public class CashCardController {
         }
         return ResponseEntity.notFound().build();
     }
+
+    @PutMapping("/{requestedId}")
+    private ResponseEntity<Void> putCashCard(@PathVariable Long requestedId,
+                                             @RequestBody CashCard cashCardUpdate, Principal principal) {
+        var cashCard = cashCardRepository.findByIdAndOwner(requestedId, principal.getName());
+        if (cashCard != null) {
+            var cashCardUpdated = new CashCard(cashCard.id(), cashCardUpdate.amount(), principal.getName());
+            cashCardRepository.save(cashCardUpdated);
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
 }
