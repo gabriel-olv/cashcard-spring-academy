@@ -81,4 +81,30 @@ class CashcardsApplicationTests {
 		JSONArray page = documentContext.read("$[*]");
 		assertThat(page.size()).isEqualTo(1);
 	}
+
+	@Test
+	void shouldReturnASortedPageOfCashCards() {
+		var response = rest.getForEntity("/cashcards?page=0&size=1&sort=amount,desc", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		var documentContext = JsonPath.parse(response.getBody());
+		JSONArray list = documentContext.read("$[*]");
+		assertThat(list.size()).isEqualTo(1);
+
+		var amount = documentContext.read("$[0].amount");
+		assertThat(amount).isEqualTo(150.0);
+	}
+
+	@Test
+	void shouldReturnASortedPageOfCashCardsWithNoParametersAndUseDefaultValues() {
+		var response = rest.getForEntity("/cashcards", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		var documentContext = JsonPath.parse(response.getBody());
+		JSONArray list = documentContext.read("$[*]");
+		assertThat(list.size()).isEqualTo(3);
+
+		JSONArray amounts = documentContext.read("$..amount");
+		assertThat(amounts).containsExactly(1.0, 123.45, 150.0);
+	}
 }
