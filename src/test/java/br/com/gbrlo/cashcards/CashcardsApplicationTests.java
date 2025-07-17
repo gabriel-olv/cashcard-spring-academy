@@ -71,4 +71,14 @@ class CashcardsApplicationTests {
 		assertThat(ids).containsExactlyInAnyOrder(99, 100, 101);
 		assertThat(amount).containsExactlyInAnyOrder(123.45, 1.0, 150.0);
 	}
+
+	@Test
+	void shouldReturnAPageOfCashCards() {
+		var response = rest.getForEntity("/cashcards?page=0&size=1", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		var documentContext = JsonPath.parse(response.getBody());
+		JSONArray page = documentContext.read("$[*]");
+		assertThat(page.size()).isEqualTo(1);
+	}
 }
