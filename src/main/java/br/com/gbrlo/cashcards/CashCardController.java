@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -21,8 +22,10 @@ public class CashCardController {
     }
 
     @PostMapping
-    private ResponseEntity<Void> createCashCard(@RequestBody CashCard newCashCardRequest, UriComponentsBuilder ucb) {
-        var savedCashCard = cashCardRepository.save(newCashCardRequest);
+    private ResponseEntity<Void> createCashCard(@RequestBody CashCard newCashCardRequest,
+                                                UriComponentsBuilder ucb, Principal principal) {
+        var cashCardWithOwner = new CashCard(null, newCashCardRequest.amount(), principal.getName());
+        var savedCashCard = cashCardRepository.save(cashCardWithOwner);
         var locationOfNewCashCard = ucb.path("cashcards/{id}")
                 .buildAndExpand(savedCashCard.id())
                 .toUri();
@@ -30,8 +33,9 @@ public class CashCardController {
     }
 
     @GetMapping
-    private ResponseEntity<List<CashCard>> findAll(Pageable pageable) {
-        var page = cashCardRepository.findAll(
+    private ResponseEntity<List<CashCard>> findAll(Pageable pageable, Principal principal) {
+        var page = cashCardRepository.findByOwner(
+                principal.getName(),
                 PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
@@ -41,10 +45,10 @@ public class CashCardController {
     }
 
     @GetMapping("/{requestedId}")
-    private ResponseEntity<CashCard> findById(@PathVariable Long requestedId) {
-        var cashCardOptional = cashCardRepository.findById(requestedId);
-        if (cashCardOptional.isPresent()) {
-            return ResponseEntity.ok(cashCardOptional.get());
+    private ResponseEntity<CashCard> findById(@PathVariable Long requestedId, Principal principal) {
+        var cashCard = cashCardRepository.findByIdAndOwner(requestedId, principal.getName());
+        if (cashCard != null) {
+            return ResponseEntity.ok(cashCard);
         }
         return ResponseEntity.notFound().build();
     }
